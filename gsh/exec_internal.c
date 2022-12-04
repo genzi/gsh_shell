@@ -7,6 +7,8 @@
 
 #define EXEC_INTERNAL_HELP "help"
 #define EXEC_INTERNAL_EXIT "exit"
+#define EXEC_INTERNAL_ECHO "echo"
+
 
 typedef struct
 {
@@ -17,6 +19,7 @@ typedef struct
 
 static void *help_Callback(void *_ptr);
 static void *exit_Callback(void *_ptr);
+static void *echo_Callback(void *_ptr);
 
 
 static ExecInternal_t commandsTable[] = {
@@ -24,8 +27,10 @@ static ExecInternal_t commandsTable[] = {
     [0].callback    = help_Callback,
     [1].command     = EXEC_INTERNAL_EXIT,
     [1].callback    = exit_Callback,
-    [2].command     = NULL,
-    [2].callback    = NULL
+    [2].command     = EXEC_INTERNAL_ECHO,
+    [2].callback    = echo_Callback,
+    [3].command     = NULL,
+    [3].callback    = NULL
 };
 
 
@@ -43,6 +48,16 @@ static void *exit_Callback(void *_ptr) {
 
     fclose(stdin);
 
+    return NULL;
+}
+
+static void *echo_Callback(void *_ptr) {
+    char **args = (char **)_ptr;
+
+    for(int i = 1; args[i] != NULL; i++) {
+        printf("%s ", args[i]);
+    }
+    printf("\n");
     return NULL;
 }
 
