@@ -1,8 +1,12 @@
-#include "exec_internal.h"
+#include "exec.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 
 #define EXEC_INTERNAL_HELP "help"
@@ -38,7 +42,7 @@ static void *help_Callback(void *_ptr) {
     (void)_ptr;
 
     printf("Supported comamnds: ");
-    ExecInternal_PrintCommands();
+    Exec_PrintInternal();
 
     return NULL;
 }
@@ -61,18 +65,22 @@ static void *echo_Callback(void *_ptr) {
     return NULL;
 }
 
-ExecInternalStatus_t ExecInternal_CallCommand(char **command) {
+ExecStatus_t Exec_CallInternal(char **command) {
 
-    ExecInternalStatus_t status = ExecInternalStatus_NotFound;
+    ExecStatus_t status = ExecStatus_NotFound;
+
+    if(command[0] == NULL) {
+        return ExecStatus_Error;
+    }
 
     for(int i = 0; commandsTable[i].command != NULL; i++) {
         if(!strcmp(commandsTable[i].command, command[0])) {
             if(NULL == commandsTable[i].callback) {
-                status = ExecInternalStatus_Error;
+                status = ExecStatus_Error;
                 break;
             } else {
                 commandsTable[i].callback(command);
-                status = ExecInternalStatus_OK;
+                status = ExecStatus_OK;
                 break;
             }
         }
@@ -81,10 +89,26 @@ ExecInternalStatus_t ExecInternal_CallCommand(char **command) {
     return status;
 }
 
-void ExecInternal_PrintCommands(void) {
+void Exec_PrintInternal(void) {
 
     for(int i = 0; commandsTable[i].command != NULL; i++) {
         printf("%s ", commandsTable[i].command);
     }
     printf("\n");
+}
+
+
+ExecStatus_t Exec_CallExternal(char **command) {
+    ExecStatus_t status = ExecStatus_OK;
+
+    if(fork() == 0) {
+        if (execve(command[0], command, NULL) == -1) {
+            perror("Exec error");
+            status = ExecStatus_Error;
+        }
+    } else {
+        while(wait(NULL) > 0);
+    }
+
+    return status;
 }

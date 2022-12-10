@@ -1,4 +1,4 @@
-add_library (gsh gsh.c command.c exec_internal.c)
+add_library (gsh gsh.c command.c exec.c)
 
 target_include_directories (gsh PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

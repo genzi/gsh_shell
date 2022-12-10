@@ -1,5 +1,5 @@
 #include "command.h"
-#include "exec_internal.h"
+#include "exec.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -65,15 +65,22 @@ CommandStatus_t Command_GetAndExecute(void) {
     }
     command.argv[i] = NULL;
 
-    switch(ExecInternal_CallCommand(command.argv)) {
-        case ExecInternalStatus_OK:
+    switch(Exec_CallInternal(command.argv)) {
+        case ExecStatus_OK:
             //Nothing to do here
             break;
-        case ExecInternalStatus_NotFound:
-            printf("Command not found. Supported comamnds: ");
-            ExecInternal_PrintCommands();
+        case ExecStatus_NotFound:
+            if(Exec_CallExternal(command.argv) == ExecStatus_Error) {
+                for(i = 0; i < command.argc; i++) {
+                    free(command.argv[i]);
+                }
+                free(command.argv);
+                free(commandPtr);
+                free(commandCopyPtr);
+                exit(EXIT_FAILURE);
+            }
             break;
-        case ExecInternalStatus_Error:
+        case ExecStatus_Error:
             fprintf(stderr, "Command execution error!\n");
             break;
         default:
@@ -81,12 +88,12 @@ CommandStatus_t Command_GetAndExecute(void) {
             break;
     }
 
-    free(commandPtr);
-    free(commandCopyPtr);
     for(i = 0; i < command.argc; i++) {
         free(command.argv[i]);
     }
     free(command.argv);
+    free(commandPtr);
+    free(commandCopyPtr);
 
     return CommandStatus_OK;
 }
