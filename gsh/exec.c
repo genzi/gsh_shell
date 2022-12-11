@@ -8,11 +8,13 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <limits.h>
 
 
-#define EXEC_INTERNAL_HELP "help"
-#define EXEC_INTERNAL_EXIT "exit"
-#define EXEC_INTERNAL_ECHO "echo"
+#define EXEC_INTERNAL_HELP  "help"
+#define EXEC_INTERNAL_EXIT  "exit"
+#define EXEC_INTERNAL_ECHO  "echo"
+#define EXEC_INTERNAL_CD    "cd"
 
 
 typedef struct
@@ -25,6 +27,7 @@ typedef struct
 static void *help_Callback(void *_ptr);
 static void *exit_Callback(void *_ptr);
 static void *echo_Callback(void *_ptr);
+static void *cd_Callback(void *_ptr);
 
 
 static ExecInternal_t commandsTable[] = {
@@ -34,8 +37,10 @@ static ExecInternal_t commandsTable[] = {
     [1].callback    = exit_Callback,
     [2].command     = EXEC_INTERNAL_ECHO,
     [2].callback    = echo_Callback,
-    [3].command     = NULL,
-    [3].callback    = NULL
+    [3].command     = EXEC_INTERNAL_CD,
+    [3].callback    = cd_Callback,
+    [4].command     = NULL,
+    [4].callback    = NULL
 };
 
 
@@ -63,6 +68,43 @@ static void *echo_Callback(void *_ptr) {
         printf("%s ", args[i]);
     }
     printf("\n");
+    return NULL;
+}
+
+char lastPath[PATH_MAX];
+
+static void *cd_Callback(void *_ptr) {
+    char **args = (char **)_ptr;
+    char *dir = args[1];
+    char currentPath[PATH_MAX];
+
+    if(getcwd(currentPath, sizeof(currentPath)) == NULL) {
+        *currentPath = '\0';
+    }
+
+    if(NULL == dir || !strcmp(dir, "~")) {
+        dir = getenv("HOME");
+        if(NULL == dir) {
+            fprintf(stderr, "Unknown home dir");
+            return NULL;
+        }
+    }
+
+    if(!strcmp(dir, "-")) {
+        if(*lastPath == '\0') {
+            fprintf(stderr, "No last directory!\n");
+            return NULL;
+        }
+        dir = lastPath;
+    }
+
+    if(-1 == chdir(dir)) {
+        perror("cd");
+        return NULL;
+    }
+
+    strncpy(lastPath, currentPath, PATH_MAX);
+
     return NULL;
 }
 

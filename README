@@ -11,5 +11,3 @@ mkdir debug
 cd debug
 cmake -DCMAKE_BUILD_TYPE=Debug ..
 make
-
-//TODO:use threads to execute commands?
