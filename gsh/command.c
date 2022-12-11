@@ -26,6 +26,7 @@ CommandStatus_t Command_GetAndExecute(void) {
     const char *delimPtr = " \n";
     size_t commandLen = 0;
     ssize_t nbCharsRead = -1;
+    ExecStatus_t status;
 
     nbCharsRead = getline(&commandPtr, &commandLen, stdin);
 
@@ -70,7 +71,8 @@ CommandStatus_t Command_GetAndExecute(void) {
             //Nothing to do here
             break;
         case ExecStatus_NotFound:
-            if(Exec_CallExternal(command.argv) == ExecStatus_Error) {
+            status = Exec_CallExternal(command.argv);
+            if(status == ExecStatus_Error) {
                 for(i = 0; i < command.argc; i++) {
                     free(command.argv[i]);
                 }
@@ -78,6 +80,8 @@ CommandStatus_t Command_GetAndExecute(void) {
                 free(commandPtr);
                 free(commandCopyPtr);
                 exit(EXIT_FAILURE);
+            } else if(status == ExecStatus_NotFound) {
+                fprintf(stderr, "Command \"%s\" not found!\n", command.argv[0]);
             }
             break;
         case ExecStatus_Error:

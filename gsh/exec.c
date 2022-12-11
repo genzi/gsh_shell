@@ -6,6 +6,7 @@
 
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 
@@ -97,18 +98,60 @@ void Exec_PrintInternal(void) {
     printf("\n");
 }
 
+static char *getCommandPath(char *command) {
+    char *path, *pathCopy, *pathToken, *filePath;
+    int commandLength, directoryLength;
+    struct stat buffer;
+
+    path = getenv("PATH");
+
+    if(path) {
+        pathCopy = strdup(path);
+        commandLength = strlen(command);
+
+        pathToken = strtok(pathCopy, ":");
+        while(pathToken != NULL){
+            directoryLength = strlen(pathToken);
+            filePath = malloc(commandLength + directoryLength + 2);
+
+            strcpy(filePath, pathToken);
+            strcat(filePath, "/");
+            strcat(filePath, command);
+            strcat(filePath, "\0");
+
+            if(stat(filePath, &buffer) == 0){
+                free(pathCopy);
+                return (filePath);
+            } else {
+                free(filePath);
+                pathToken = strtok(NULL, ":");
+            }
+        }
+        free(pathCopy);
+        if (stat(command, &buffer) == 0) {
+            return (command);
+        }
+        return (NULL);
+    }
+    return (NULL);
+}
 
 ExecStatus_t Exec_CallExternal(char **command) {
     ExecStatus_t status = ExecStatus_OK;
+    char *commandFullPath = getCommandPath(command[0]);
+
+    if(NULL == commandFullPath) {
+        return ExecStatus_NotFound;
+    }
 
     if(fork() == 0) {
-        if (execve(command[0], command, NULL) == -1) {
+        if (execve(commandFullPath, command, NULL) == -1) {
             perror("Exec error");
             status = ExecStatus_Error;
         }
     } else {
         while(wait(NULL) > 0);
     }
-
+    free(commandFullPath);
     return status;
 }
