@@ -7,6 +7,7 @@ typedef enum {
     ExecStatus_NotFound    = 1
 } ExecStatus_t;
 
+char *Exec_GetAliasCommand(char *alias);
 ExecStatus_t Exec_CallInternal(char **command);
 void Exec_PrintInternal(void);
 ExecStatus_t Exec_CallExternal(char **command);

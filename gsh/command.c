@@ -21,6 +21,7 @@ typedef struct {
 
 CommandStatus_t Command_GetAndExecute(void) {
 
+    char *aliasPtr = NULL;
     char *commandPtr = NULL;
     char *commandCopyPtr = NULL;
     const char *delimPtr = " \n";
@@ -33,6 +34,15 @@ CommandStatus_t Command_GetAndExecute(void) {
     if(-1 == nbCharsRead) {
         free(commandPtr);
         return CommandStatus_EOF;
+    }
+
+    aliasPtr = Exec_GetAliasCommand(commandPtr);
+
+    if(aliasPtr != NULL) {
+        free(commandPtr);
+        nbCharsRead = strlen(aliasPtr);
+        commandPtr = malloc(sizeof(char) * (nbCharsRead+1));
+        strcpy(commandPtr, aliasPtr);
     }
 
     commandCopyPtr = malloc(sizeof(char) * (nbCharsRead+1));
@@ -66,30 +76,47 @@ CommandStatus_t Command_GetAndExecute(void) {
     }
     command.argv[i] = NULL;
 
-    switch(Exec_CallInternal(command.argv)) {
-        case ExecStatus_OK:
-            //Nothing to do here
-            break;
-        case ExecStatus_NotFound:
-            status = Exec_CallExternal(command.argv);
-            if(status == ExecStatus_Error) {
-                for(i = 0; i < command.argc; i++) {
-                    free(command.argv[i]);
+    if(aliasPtr == NULL) {
+        switch(Exec_CallInternal(command.argv)) {
+            case ExecStatus_OK:
+                //Nothing to do here
+                break;
+            case ExecStatus_NotFound:
+                status = Exec_CallExternal(command.argv);
+                if(status == ExecStatus_Error) {
+                    for(i = 0; i < command.argc; i++) {
+                        free(command.argv[i]);
+                    }
+                    free(command.argv);
+                    free(commandPtr);
+                    free(commandCopyPtr);
+                    exit(EXIT_FAILURE);
+                } else if(status == ExecStatus_NotFound) {
+                    fprintf(stderr, "Command \"%s\" not found!\n", command.argv[0]);
                 }
-                free(command.argv);
-                free(commandPtr);
-                free(commandCopyPtr);
-                exit(EXIT_FAILURE);
-            } else if(status == ExecStatus_NotFound) {
-                fprintf(stderr, "Command \"%s\" not found!\n", command.argv[0]);
+                break;
+            case ExecStatus_Error:
+                fprintf(stderr, "Command execution error!\n");
+                break;
+            default:
+                fprintf(stderr, "Unknown error!");
+                break;
+        }
+    } else {
+        status = Exec_CallExternal(command.argv);
+        if(status == ExecStatus_Error) {
+            for(i = 0; i < command.argc; i++) {
+                free(command.argv[i]);
             }
-            break;
-        case ExecStatus_Error:
-            fprintf(stderr, "Command execution error!\n");
-            break;
-        default:
-            fprintf(stderr, "Unknown error!");
-            break;
+            free(command.argv);
+            free(commandPtr);
+            free(commandCopyPtr);
+            exit(EXIT_FAILURE);
+        } else if(status == ExecStatus_NotFound) {
+            fprintf(stderr, "Alias command \"%s\" not found!\n", command.argv[0]);
+        } else {
+            // Alias exec OK.
+        }
     }
 
     for(i = 0; i < command.argc; i++) {

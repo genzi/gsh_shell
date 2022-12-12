@@ -17,8 +17,12 @@
 #define EXEC_INTERNAL_CD    "cd"
 
 
-typedef struct
-{
+typedef struct {
+    char *alias;
+    char *command;
+} ExecAlias_t;
+
+typedef struct {
     char *command;
     void *(*callback)(void *);
 } ExecInternal_t;
@@ -29,6 +33,11 @@ static void *exit_Callback(void *_ptr);
 static void *echo_Callback(void *_ptr);
 static void *cd_Callback(void *_ptr);
 
+
+static ExecAlias_t aliasesTable[] = {
+    {"ll", "ls -alF"},
+    {NULL, NULL},
+};
 
 static ExecInternal_t commandsTable[] = {
     [0].command     = EXEC_INTERNAL_HELP,
@@ -130,6 +139,20 @@ ExecStatus_t Exec_CallInternal(char **command) {
     }
 
     return status;
+}
+
+char *Exec_GetAliasCommand(char *alias) {
+    int i = 0;
+
+    alias[strcspn(alias, "\n")] = 0;
+
+    while (aliasesTable[i].alias != NULL) {
+        if (strcmp(alias, aliasesTable[i].alias) == 0) {
+            return(aliasesTable[i].command);
+        }
+        i++;
+    }
+    return NULL;
 }
 
 void Exec_PrintInternal(void) {
