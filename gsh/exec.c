@@ -15,6 +15,7 @@
 #define EXEC_INTERNAL_EXIT  "exit"
 #define EXEC_INTERNAL_ECHO  "echo"
 #define EXEC_INTERNAL_CD    "cd"
+#define EXEC_INTERNAL_CRASHME "crashme"
 
 
 typedef struct {
@@ -32,6 +33,7 @@ static void *help_Callback(void *_ptr);
 static void *exit_Callback(void *_ptr);
 static void *echo_Callback(void *_ptr);
 static void *cd_Callback(void *_ptr);
+static void *crashme_Callback(void *_ptr);
 
 
 static ExecAlias_t aliasesTable[] = {
@@ -48,8 +50,10 @@ static ExecInternal_t commandsTable[] = {
     [2].callback    = echo_Callback,
     [3].command     = EXEC_INTERNAL_CD,
     [3].callback    = cd_Callback,
-    [4].command     = NULL,
-    [4].callback    = NULL
+    [4].command     = EXEC_INTERNAL_CRASHME,
+    [4].callback    = crashme_Callback,
+    [5].command     = NULL,
+    [5].callback    = NULL
 };
 
 
@@ -113,6 +117,15 @@ static void *cd_Callback(void *_ptr) {
     }
 
     strncpy(lastPath, currentPath, PATH_MAX);
+
+    return NULL;
+}
+
+static void *crashme_Callback(void *_ptr) {
+    (void)_ptr;
+
+    u_int32_t * carshPtr = (u_int32_t *)0x01;
+    *carshPtr = 0xDEAD;
 
     return NULL;
 }
