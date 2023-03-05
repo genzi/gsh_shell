@@ -13,17 +13,20 @@ endif()
 # Unit tests sources
 set(TEST_APP_NAME ${APP_NAME}_tests)
 set(TEST_SOURCES
-    mocks/mocks.cpp
-    module_test.cpp
+    mocks/exec_mocks.cpp
+    exec_test.cpp
     main.cpp
+)
+set(SRC_SOURCES
+    ../src/gsh/exec.c
 )
 
 include_directories(${CPPUTEST_INCLUDE_DIRS} ../src/)
 link_directories(${CPPUTEST_LIBRARIES})
 
 # Build the unit tests objects and link then with the app library
-add_executable(${TEST_APP_NAME} ${TEST_SOURCES})
-target_link_libraries(${TEST_APP_NAME} gsh ${CPPUTEST_LDFLAGS})
+add_executable(${TEST_APP_NAME} ${TEST_SOURCES} ${SRC_SOURCES})
+target_link_libraries(${TEST_APP_NAME} ${CPPUTEST_LDFLAGS})
 
 # Run the test once the build is done
-add_custom_command(TARGET ${TEST_APP_NAME} COMMAND ./${TEST_APP_NAME} POST_BUILD)
+add_custom_command(TARGET ${TEST_APP_NAME} COMMAND ./${TEST_APP_NAME} POST_BUILD -v)
