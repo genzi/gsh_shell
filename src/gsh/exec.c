@@ -60,7 +60,7 @@ static ExecInternal_t commandsTable[] = {
 static void *help_Callback(void *_ptr) {
     (void)_ptr;
 
-    printf("Supported comamnds: ");
+    printf("Supported commands: ");
     Exec_PrintInternal();
 
     return NULL;
@@ -133,6 +133,10 @@ static void *crashme_Callback(void *_ptr) {
 ExecStatus_t Exec_CallInternal(char **command) {
 
     ExecStatus_t status = ExecStatus_NotFound;
+
+    if(command == NULL) {
+        return ExecStatus_Error;
+    }
 
     if(command[0] == NULL) {
         return ExecStatus_Error;
