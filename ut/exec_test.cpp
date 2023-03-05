@@ -164,7 +164,7 @@ TEST(ExecTestGroup, Exec_CallExternal_pwd_ReturnOk)
    char *commandPtr[3];
 
    commandPtr[0] = { (char *)"pwd" };
-   commandPtr[1] = NULL;//{ (char *)"" };
+   commandPtr[1] = NULL;
    commandPtr[2] = NULL;
 
    ExecStatus_t status = ExecStatus_NotFound;
