@@ -27,8 +27,6 @@ static GshStatus_t handleGshRc(void) {
     strcat(gshrcPath, "/");
     strncat(gshrcPath, GSHRC_FILENAME, PATH_MAX - 2);
 
-    printf("%s", gshrcPath);
-
     if(!(gshrc = fopen(gshrcPath, "r"))) {
         fprintf(stderr, "cannot open .gshrc\n");
         return GshStatus_Error;
