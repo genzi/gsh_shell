@@ -2,6 +2,7 @@
 #define __COMMAND_H__
 
 #include <stdlib.h>
+#include <stdio.h>
 
 
 typedef enum {
@@ -10,7 +11,7 @@ typedef enum {
     CommandStatus_EOF   = 1
 } CommandStatus_t;
 
-CommandStatus_t Command_GetAndExecute(void);
+CommandStatus_t Command_GetAndExecute(FILE *input_stream);
 
 
 #endif  // end __COMMAND_H__

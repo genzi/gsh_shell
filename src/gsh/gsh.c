@@ -5,19 +5,58 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <string.h>
+#include <limits.h>
 
 
-void printPrompt(void) {
+#define GSHRC_FILENAME  ".gshrc"
+
+
+static GshStatus_t handleGshRc(void) {
+    char gshrcPath[PATH_MAX];
+    FILE *gshrc = NULL;
+    char *homeDir = getenv("HOME");
+
+    if(NULL == homeDir) {
+        fprintf(stderr, "unknown home dir\n");
+        return GshStatus_Error;
+    }
+
+    strncpy(gshrcPath, homeDir, PATH_MAX - strlen(GSHRC_FILENAME) - 2);
+    strcat(gshrcPath, "/");
+    strncat(gshrcPath, GSHRC_FILENAME, PATH_MAX - 2);
+
+    printf("%s", gshrcPath);
+
+    if(!(gshrc = fopen(gshrcPath, "r"))) {
+        fprintf(stderr, "cannot open .gshrc\n");
+        return GshStatus_Error;
+    }
+
+    while(Command_GetAndExecute(gshrc) != CommandStatus_EOF);
+
+    fclose(gshrc);
+    return GshStatus_OK;
+}
+
+static GshStatus_t init(void) {
+    return handleGshRc();
+}
+
+static void printPrompt(void) {
     char *prompt = "(gsh) $ ";
 
     printf("%s", prompt);
 }
 
 GshStatus_t GshRun(void) {
+    init();
+
     while(true) {
         printPrompt();
 
-        switch(Command_GetAndExecute()) {
+        switch(Command_GetAndExecute(stdin)) {
             case CommandStatus_EOF:
                 printf("Exiting gsh shell...\n");
                 exit(EXIT_SUCCESS);

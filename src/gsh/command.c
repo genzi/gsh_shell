@@ -19,7 +19,7 @@ typedef struct {
 
 
 
-CommandStatus_t Command_GetAndExecute(void) {
+CommandStatus_t Command_GetAndExecute(FILE *input_stream) {
 
     char *aliasPtr = NULL;
     char *commandPtr = NULL;
@@ -29,7 +29,7 @@ CommandStatus_t Command_GetAndExecute(void) {
     ssize_t nbCharsRead = -1;
     ExecStatus_t status;
 
-    nbCharsRead = getline(&commandPtr, &commandLen, stdin);
+    nbCharsRead = getline(&commandPtr, &commandLen, input_stream);
 
     if(-1 == nbCharsRead) {
         free(commandPtr);
