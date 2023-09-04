@@ -98,6 +98,8 @@ CommandStatus_t Command_GetAndExecute(FILE *input_stream) {
             case ExecStatus_Error:
                 fprintf(stderr, "Command execution error!\n");
                 break;
+            case ExecStatus_NullCmd:
+                break;
             default:
                 fprintf(stderr, "Unknown error!");
                 break;

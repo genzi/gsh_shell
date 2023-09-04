@@ -139,7 +139,7 @@ ExecStatus_t Exec_CallInternal(char **command) {
     }
 
     if(command[0] == NULL) {
-        return ExecStatus_Error;
+        return ExecStatus_NullCmd;
     }
 
     for(int i = 0; commandsTable[i].command != NULL; i++) {

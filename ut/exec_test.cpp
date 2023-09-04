@@ -114,7 +114,7 @@ TEST(ExecTestGroup, Exec_CallInternal_Exit_ReturnOk)
    CHECK_EQUAL(ExecStatus_OK, status);
 }
 
-TEST(ExecTestGroup, Exec_CallInternal_CommandNull_ReturnError)
+TEST(ExecTestGroup, Exec_CallInternal_CommandNull_ReturnNullCmd)
 {
    char *commandPtr[3] = {NULL};
 
@@ -122,7 +122,7 @@ TEST(ExecTestGroup, Exec_CallInternal_CommandNull_ReturnError)
 
    status = Exec_CallInternal((char **)commandPtr);
 
-   CHECK_EQUAL(ExecStatus_Error, status);
+   CHECK_EQUAL(ExecStatus_NullCmd, status);
 
    status = Exec_CallInternal(NULL);
 
