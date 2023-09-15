@@ -33,6 +33,7 @@ CommandStatus_t Command_GetAndExecute(FILE *input_stream) {
 
     if(-1 == nbCharsRead) {
         free(commandPtr);
+        (void)Exec_FreeAliasesTable();
         return CommandStatus_EOF;
     }
 

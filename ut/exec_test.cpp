@@ -32,11 +32,13 @@ TEST(ExecTestGroup, Exec_GetAliasCommand_UnknownAlias_ReturnNull)
 TEST(ExecTestGroup, Exec_GetAliasCommand_llAlias_ReturnCommand)
 {
    char alias[] = {"ll"};
-   char *command;
+   char command[] = {"ls -alF"};
+   char *returnedCommand;
 
-   command = Exec_GetAliasCommand(alias);
+   Exec_AddAliasCommand(alias, command);
+   returnedCommand = Exec_GetAliasCommand(alias);
 
-   STRCMP_EQUAL("ls -alF", command);
+   STRCMP_EQUAL("ls -alF", returnedCommand);
 }
 
 TEST(ExecTestGroup, Exec_CallInternal_Unknown_ReturnNotFound)

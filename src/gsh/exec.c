@@ -8,14 +8,18 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <limits.h>
+#include <linux/limits.h>
 
 
-#define EXEC_INTERNAL_HELP  "help"
-#define EXEC_INTERNAL_EXIT  "exit"
-#define EXEC_INTERNAL_ECHO  "echo"
-#define EXEC_INTERNAL_CD    "cd"
-#define EXEC_INTERNAL_CRASHME "crashme"
+#define MAX_CMD_LEN             ARG_MAX
+
+#define EXEC_INTERNAL_HELP      "help"
+#define EXEC_INTERNAL_EXIT      "exit"
+#define EXEC_INTERNAL_ECHO      "echo"
+#define EXEC_INTERNAL_CD        "cd"
+#define EXEC_INTERNAL_CRASHME   "crashme"
+#define EXEC_INTERNAL_ALIAS     "alias"
+#define EXEC_INTERNAL_UNALIAS   "unalias"
 
 
 typedef struct {
@@ -34,12 +38,11 @@ static void *exit_Callback(void *_ptr);
 static void *echo_Callback(void *_ptr);
 static void *cd_Callback(void *_ptr);
 static void *crashme_Callback(void *_ptr);
+static void *alias_Callback(void *_ptr);
+static void *unalias_Callback(void *_ptr);
 
+static ExecAlias_t *aliasesTable = NULL;
 
-static ExecAlias_t aliasesTable[] = {
-    {"ll", "ls -alF"},
-    {NULL, NULL},
-};
 
 static ExecInternal_t commandsTable[] = {
     [0].command     = EXEC_INTERNAL_HELP,
@@ -52,8 +55,12 @@ static ExecInternal_t commandsTable[] = {
     [3].callback    = cd_Callback,
     [4].command     = EXEC_INTERNAL_CRASHME,
     [4].callback    = crashme_Callback,
-    [5].command     = NULL,
-    [5].callback    = NULL
+    [5].command     = EXEC_INTERNAL_ALIAS,
+    [5].callback    = alias_Callback,
+    [6].command     = EXEC_INTERNAL_UNALIAS,
+    [6].callback    = unalias_Callback,
+    [7].command     = NULL,
+    [7].callback    = NULL
 };
 
 
@@ -84,7 +91,7 @@ static void *echo_Callback(void *_ptr) {
     return NULL;
 }
 
-char lastPath[PATH_MAX];
+static char lastPath[PATH_MAX];
 
 static void *cd_Callback(void *_ptr) {
     char **args = (char **)_ptr;
@@ -130,6 +137,44 @@ static void *crashme_Callback(void *_ptr) {
     return NULL;
 }
 
+static void *alias_Callback(void *_ptr) {
+    char **args = (char **)_ptr;
+
+    if(NULL == args[1]) {
+        if(NULL == aliasesTable) {
+            return NULL;
+        }
+        int i = 0;
+        while(NULL != aliasesTable[i].alias) {
+            printf("alias %s='%s'\n", aliasesTable[i].alias, aliasesTable[i].command);
+            i++;
+        }
+        return NULL;
+    }
+
+    char fullCommand[MAX_CMD_LEN] = {0};
+
+    for(int i = 1; args[i] != NULL; i++) {
+        strcat(fullCommand, args[i]);
+        strcat(fullCommand, " ");
+    }
+    char delim[] = "=";
+    char *alias = strtok(fullCommand, delim);
+    char *command = strtok(NULL, delim);
+
+    Exec_AddAliasCommand(alias, command);
+
+    return NULL;
+}
+
+static void *unalias_Callback(void *_ptr) {
+    (void)_ptr;
+    //TODO: implement me
+    fprintf(stderr, "unalias: implement me!\n");
+
+    return NULL;
+}
+
 ExecStatus_t Exec_CallInternal(char **command) {
 
     ExecStatus_t status = ExecStatus_NotFound;
@@ -161,6 +206,10 @@ ExecStatus_t Exec_CallInternal(char **command) {
 char *Exec_GetAliasCommand(char *alias) {
     int i = 0;
 
+    if(NULL == aliasesTable) {
+        return NULL;
+    }
+
     alias[strcspn(alias, "\n")] = 0;
 
     while (aliasesTable[i].alias != NULL) {
@@ -170,6 +219,49 @@ char *Exec_GetAliasCommand(char *alias) {
         i++;
     }
     return NULL;
+}
+
+ExecStatus_t Exec_AddAliasCommand(char * alias, char *command) {
+    int i = 0;
+    int aliasesTableSize = 0;
+
+    if(NULL == alias ||
+       NULL == command) {
+        return ExecStatus_Error;
+    }
+
+    alias[strcspn(alias, "\n")] = 0;
+    command[strcspn(command, "\n")] = 0;
+
+    if(NULL == aliasesTable) {
+        aliasesTableSize = 1;
+    } else {
+        while (aliasesTable[i++].alias != NULL);
+        aliasesTableSize = i;   //with the last NULL
+    }
+
+    aliasesTable = realloc(aliasesTable, (aliasesTableSize + 1) * sizeof(ExecAlias_t));
+
+    int aliasLen = strlen(alias) + 1;
+    int commandLen = strlen(command) + 1;
+    if(aliasLen > (MAX_CMD_LEN - 1) ||
+       commandLen > (MAX_CMD_LEN - 1)) {
+        return ExecStatus_Error;
+    }
+    aliasesTable[aliasesTableSize - 1].alias = malloc(aliasLen);
+    aliasesTable[aliasesTableSize - 1].command = malloc(commandLen);
+    if(NULL == aliasesTable[aliasesTableSize - 1].alias ||
+       NULL == aliasesTable[aliasesTableSize - 1].command) {
+        perror("malloc for aliases\n");
+        return ExecStatus_Error;
+    }
+    strncpy(aliasesTable[aliasesTableSize - 1].alias, alias, aliasLen);
+    strncpy(aliasesTable[aliasesTableSize - 1].command, command, commandLen);
+
+    aliasesTable[aliasesTableSize].alias = NULL;
+    aliasesTable[aliasesTableSize].command = NULL;
+
+    return ExecStatus_OK;
 }
 
 void Exec_PrintInternal(void) {
@@ -236,4 +328,18 @@ ExecStatus_t Exec_CallExternal(char **command) {
     }
     free(commandFullPath);
     return status;
+}
+
+ExecStatus_t Exec_FreeAliasesTable(void) {
+    if(NULL == aliasesTable) {
+        return ExecStatus_NoAction;
+    }
+    int i = 0;
+    while(NULL != aliasesTable[i].alias) {
+        free(aliasesTable[i].alias);
+        free(aliasesTable[i].command);
+        i++;
+    }
+    free(aliasesTable);
+    return ExecStatus_OK;
 }
