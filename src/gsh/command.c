@@ -33,7 +33,9 @@ CommandStatus_t Command_GetAndExecute(FILE *input_stream) {
 
     if(-1 == nbCharsRead) {
         free(commandPtr);
-        (void)Exec_FreeAliasesTable();
+        if(input_stream == stdin) { //close stdin means exit program
+            (void)Exec_FreeAliasesTable();
+        }
         return CommandStatus_EOF;
     }
 

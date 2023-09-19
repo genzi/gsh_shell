@@ -168,9 +168,9 @@ static void *alias_Callback(void *_ptr) {
 }
 
 static void *unalias_Callback(void *_ptr) {
-    (void)_ptr;
-    //TODO: implement me
-    fprintf(stderr, "unalias: implement me!\n");
+    char **args = (char **)_ptr;
+
+    Exec_DelAliasCommand(args[1]);
 
     return NULL;
 }
@@ -264,6 +264,51 @@ ExecStatus_t Exec_AddAliasCommand(char * alias, char *command) {
     return ExecStatus_OK;
 }
 
+ExecStatus_t Exec_DelAliasCommand(char * alias) {
+    int i = 0;
+    int aliasesTableSize = 0;
+
+    if(NULL == alias) {
+        return ExecStatus_Error;
+    }
+
+    alias[strcspn(alias, "\n")] = 0;
+
+    if(NULL == aliasesTable) {
+        return ExecStatus_NoAction;
+    }
+
+    while (aliasesTable[i++].alias != NULL);
+    aliasesTableSize = i;   //with the last NULL
+
+    i = -1;
+    while (aliasesTable[++i].alias != NULL) {
+        if (strcmp(alias, aliasesTable[i].alias) == 0) {
+            break;
+        }
+    }
+
+    if((i >= aliasesTableSize) ||
+       (i == (aliasesTableSize - 1))) {
+        return ExecStatus_NotFound;
+    }
+
+    if(i == 0) {
+        Exec_FreeAliasesTable();
+    }
+
+    free(aliasesTable[i].alias);
+    free(aliasesTable[i].command);
+
+    aliasesTable[i].alias = aliasesTable[aliasesTableSize - 2].alias;
+    aliasesTable[i].command = aliasesTable[aliasesTableSize - 2].command;
+
+    aliasesTable[aliasesTableSize - 2].alias = NULL;
+    aliasesTable[aliasesTableSize - 2].command = NULL;
+
+    return ExecStatus_OK;
+}
+
 void Exec_PrintInternal(void) {
 
     for(int i = 0; commandsTable[i].command != NULL; i++) {
@@ -337,9 +382,12 @@ ExecStatus_t Exec_FreeAliasesTable(void) {
     int i = 0;
     while(NULL != aliasesTable[i].alias) {
         free(aliasesTable[i].alias);
+        aliasesTable[i].alias = NULL;
         free(aliasesTable[i].command);
+        aliasesTable[i].command = NULL;
         i++;
     }
     free(aliasesTable);
+    aliasesTable = NULL;
     return ExecStatus_OK;
 }

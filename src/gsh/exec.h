@@ -12,6 +12,7 @@ typedef enum {
 char *Exec_GetAliasCommand(char *alias);
 ExecStatus_t Exec_FreeAliasesTable(void);
 ExecStatus_t Exec_AddAliasCommand(char * alias, char *command);
+ExecStatus_t Exec_DelAliasCommand(char * alias);
 ExecStatus_t Exec_CallInternal(char **command);
 void Exec_PrintInternal(void);
 ExecStatus_t Exec_CallExternal(char **command);

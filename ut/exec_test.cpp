@@ -41,6 +41,49 @@ TEST(ExecTestGroup, Exec_GetAliasCommand_llAlias_ReturnCommand)
    STRCMP_EQUAL("ls -alF", returnedCommand);
 }
 
+TEST(ExecTestGroup, Exec_TestAliasesCommands)
+{
+   char alias[] = {"alias1"};
+   char command[] = {"command1"};
+   char *returnedCommand;
+   ExecStatus_t status;
+
+   Exec_AddAliasCommand(alias, command);
+
+   strcpy(alias, "alias2");
+   strcpy(command, "command2");
+   Exec_AddAliasCommand(alias, command);
+
+   strcpy(alias, "alias3");
+   strcpy(command, "command3");
+   Exec_AddAliasCommand(alias, command);
+
+   returnedCommand = Exec_GetAliasCommand(alias);
+   STRCMP_EQUAL("command3", returnedCommand);
+
+   strcpy(alias, "alias1");
+   returnedCommand = Exec_GetAliasCommand(alias);
+   STRCMP_EQUAL("command1", returnedCommand);
+
+   strcpy(alias, "alias2");
+   returnedCommand = Exec_GetAliasCommand(alias);
+   STRCMP_EQUAL("command2", returnedCommand);
+
+   status = Exec_DelAliasCommand(NULL);
+   CHECK_EQUAL(ExecStatus_Error, status);
+
+   status = Exec_DelAliasCommand(alias);
+   CHECK_EQUAL(ExecStatus_OK, status);
+
+   returnedCommand = Exec_GetAliasCommand(alias);
+   POINTERS_EQUAL(returnedCommand, NULL);
+
+   strcpy(alias, "alias3");
+   returnedCommand = Exec_GetAliasCommand(alias);
+   STRCMP_EQUAL("command3", returnedCommand);
+
+}
+
 TEST(ExecTestGroup, Exec_CallInternal_Unknown_ReturnNotFound)
 {
    char *commandPtr[3];
